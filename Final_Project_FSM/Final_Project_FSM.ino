@@ -1,10 +1,24 @@
 
 int state = 1; //we start in state 1
 //variables declared for state 1
-int trigPin1;
-int trigPin2;
-int echoPin1;
-int echoPin2;
+const int motor3pwmpin = 40;
+const int motor3dir1pin = 39;
+const int motor3dir2pin = 38;
+const int motor4dir1pin = 37;
+const int motor4dir2pin = 36;
+const int motor4pwmpin = 35;
+const int motor1pwmpin = 19;
+const int motor1dir1pin = 18;
+const int motor1dir2pin = 17;
+const int motor2dir1pin = 15;
+const int motor2dir2pin = 14;
+const int motor2pwmpin = 11;
+
+//variables declared for state 1
+int trigPin1=24;
+int trigPin2=26;
+int echoPin1=23;
+int echoPin2=25;
 long duration1;
 long distance1;
 long duration2;
@@ -27,9 +41,9 @@ int HasHitLine = 0;
 
 //variables and declarations for state 3
 //pins
-int IRbeaconLeft =69 ;
-int IRbeaconMiddle =69 ;
-int IRbeaconRight =69 ;
+int IRbeaconLeft;
+int IRbeaconMiddle;
+int IRbeaconRight;
 int direction;
 //variables used for 
 
@@ -204,9 +218,7 @@ case 2:
             sensorMinVal,
             sensorMaxVal,
             lineColor); //this code updates the sensors min and max values based on the current data. SOMETHING TO TEST??
-
-  uint32_t linePos = getLinePosition(sensorCalVal,lineColor); //this function return a value ranging from 0-7000. a return of 3500 means that the line is right
-                                                              //beneth both of the center
+  uint32_t linePos = getLinePosition(sensorCalVal,lineColor);
   
  if (sensorVal[3] && sensorVal[4] >2000)
   HasHitLine=HasHitLine+1; //incrementing how many lines the robot has hit
@@ -218,7 +230,7 @@ case 2:
  }
  
 break;
-}
+
    ///////////////////////////////////////////state 2 end/////////////////////////////////////////////////////////////////////////
 
 
@@ -267,12 +279,134 @@ if (direction==2){ //this means the most recent direction sensed was right.
   //motor 2 backward
   //motor 3 backward 
 }
+
+  readLineSensor(sensorVal);
+  
+  readCalLineSensor(sensorVal,
+            sensorCalVal,
+            sensorMinVal,
+            sensorMaxVal,
+            lineColor);
+
+ if (sensorVal[0]>2000 && sensorVal[1]>2000 && sensorVal[2]>2000 && sensorVal[3]>2000 && sensorVal[4]>2000 && sensorVal[5]>2000 && sensorVal[6]>2000 && sensorVal[7] >2000){
+ //if thise condition is satisfied, we are right on top of a cross.
+
+ state=4;
   
 }
 
 break;
 }
-  
+}
+}
+}
+
+
+
+
+
+
+void drive(int i,int pwm){ // drive(1) means drive forward
+  switch (i){
+    case 1: // drive forward
+      set_direction(1,1);
+      set_direction(2,1);
+      set_direction(3,1);
+      set_direction(4,1);
+      
+      break;
+    case 2: // strafe left
+      set_direction(1,1);
+      set_direction(2,-1);
+      set_direction(3,1);
+      set_direction(4,-1);
+      break;
+    case 3: // strafe right
+      set_direction(1,-1);
+      set_direction(2,1);
+      set_direction(3,-1);
+      set_direction(4,1);
+      break;
+    case 4: // reverse
+      set_direction(1,-1);
+      set_direction(2,-1);
+      set_direction(3,-1);
+      set_direction(4,-1);
+      break;
+  }
+
+  analogWrite(motor1pwmpin,pwm);
+  analogWrite(motor2pwmpin,pwm);
+  analogWrite(motor3pwmpin,pwm);
+  analogWrite(motor4pwmpin,pwm);
+    
   
 }
+
+
+void set_direction(int i,int k){
+  switch (i) {
+    case 1:
+      if (k > 0){
+        digitalWrite(motor1dir1pin,HIGH);
+        digitalWrite(motor1dir2pin,LOW);
+      }
+      else if (k<0){
+        digitalWrite(motor1dir1pin,LOW);
+        digitalWrite(motor1dir2pin,HIGH);
+      }
+      else{
+        digitalWrite(motor1dir1pin,HIGH);
+        digitalWrite(motor1dir2pin,HIGH);
+      }
+      break;
+
+    case 2:
+      if (k > 0){
+        digitalWrite(motor2dir1pin,HIGH);
+        digitalWrite(motor2dir2pin,LOW);
+      }
+      else if (k<0){
+        digitalWrite(motor2dir1pin,LOW);
+        digitalWrite(motor2dir2pin,HIGH);
+      }
+      else{
+        digitalWrite(motor2dir1pin,HIGH);
+        digitalWrite(motor2dir2pin,HIGH);
+      }
+      break;
+    case 3:
+      if (k > 0){
+        digitalWrite(motor3dir1pin,HIGH);
+        digitalWrite(motor3dir2pin,LOW);
+      }
+      else if (k<0){
+        digitalWrite(motor3dir1pin,LOW);
+        digitalWrite(motor3dir2pin,HIGH);
+      }
+      else{
+        digitalWrite(motor3dir1pin,HIGH);
+        digitalWrite(motor3dir2pin,HIGH);
+      }
+      break;
+    case 4:
+      if (k > 0){
+        digitalWrite(motor4dir1pin,HIGH);
+        digitalWrite(motor4dir2pin,LOW);
+      }
+      else if (k<0){
+        digitalWrite(motor4dir1pin,LOW);
+        digitalWrite(motor4dir2pin,HIGH);
+      }
+      else{
+        digitalWrite(motor4dir1pin,HIGH);
+        digitalWrite(motor4dir2pin,HIGH);
+      }
+      break;
+
+    
+  }
+
+
+  
 }
