@@ -1,6 +1,18 @@
 
 int state = 1; //we start in state 1
 //variables declared for state 1
+const int motor3pwmpin = 40;
+const int motor3dir1pin = 39;
+const int motor3dir2pin = 38;
+const int motor4dir1pin = 37;
+const int motor4dir2pin = 36;
+const int motor4pwmpin = 35;
+const int motor1pwmpin = 19;
+const int motor1dir1pin = 18;
+const int motor1dir2pin = 17;
+const int motor2dir1pin = 15;
+const int motor2dir2pin = 14;
+const int motor2pwmpin = 11;
 int trigPin1;
 int trigPin2;
 int echoPin1;
@@ -37,7 +49,7 @@ int direction;
 void setup() {
 
   //setup values for state 2, the reason why this is done first is that setupRSLK() declares a bunch of stuff, and a lot of it we want overwritten.
-    Serial.begin(115200);
+  Serial.begin(115200);
 
   setupRSLK();
   /* Left button on Launchpad */
@@ -58,6 +70,8 @@ void setup() {
   pinMode(echoPin1, INPUT);
   pinMode(trigPin2, OUTPUT);
   pinMode(echoPin2, INPUT);
+
+  
 startTime=micros(); //Timer used for ultrasonic sensors
 
 
@@ -65,10 +79,27 @@ startTime=micros(); //Timer used for ultrasonic sensors
 
 
 
-//state 3 pins and setup
- pinMode(IRbeaconLeft, INPUT);
- pinMode(IRbeaconMiddle, INPUT); //in the demo these are pullups
- pinMode(IRbeaconRight, INPUT);
+  //state 3 pins and setup
+  pinMode(IRbeaconLeft, INPUT);
+  pinMode(IRbeaconMiddle, INPUT); //in the demo these are pullups
+  pinMode(IRbeaconRight, INPUT);
+
+  pinMode(motor3pwmpin,OUTPUT);
+  pinMode(motor1pwmpin,OUTPUT);
+  pinMode(motor2pwmpin,OUTPUT);
+  pinMode(motor4pwmpin,OUTPUT);
+  pinMode(motor3dir1pin,OUTPUT);
+  pinMode(motor3dir2pin,OUTPUT);
+  pinMode(motor2dir1pin,OUTPUT);
+  pinMode(motor4dir1pin,OUTPUT);
+  pinMode(motor4dir2pin,OUTPUT);
+  pinMode(motor2dir1pin,OUTPUT);
+  pinMode(motor2dir2pin,OUTPUT);
+  pinMode(motor1dir1pin,OUTPUT);
+  pinMode(motor1dir2pin,OUTPUT);
+
+  digitalWrite(75,HIGH);
+  delay(1000);
 
 
 
@@ -275,4 +306,114 @@ break;
   
   
 }
+}
+
+
+
+
+
+
+
+void set_direction(int i,int k){
+  switch (i) {
+    case 1:
+      if (k > 0){
+        digitalWrite(motor1dir1pin,HIGH);
+        digitalWrite(motor1dir2pin,LOW);
+      }
+      else if (k<0){
+        digitalWrite(motor1dir1pin,LOW);
+        digitalWrite(motor1dir2pin,HIGH);
+      }
+      else{
+        digitalWrite(motor1dir1pin,HIGH);
+        digitalWrite(motor1dir2pin,HIGH);
+      }
+      break;
+
+    case 2:
+      if (k > 0){
+        digitalWrite(motor2dir1pin,HIGH);
+        digitalWrite(motor2dir2pin,LOW);
+      }
+      else if (k<0){
+        digitalWrite(motor2dir1pin,LOW);
+        digitalWrite(motor2dir2pin,HIGH);
+      }
+      else{
+        digitalWrite(motor2dir1pin,HIGH);
+        digitalWrite(motor2dir2pin,HIGH);
+      }
+      break;
+    case 3:
+      if (k > 0){
+        digitalWrite(motor3dir1pin,HIGH);
+        digitalWrite(motor3dir2pin,LOW);
+      }
+      else if (k<0){
+        digitalWrite(motor3dir1pin,LOW);
+        digitalWrite(motor3dir2pin,HIGH);
+      }
+      else{
+        digitalWrite(motor3dir1pin,HIGH);
+        digitalWrite(motor3dir2pin,HIGH);
+      }
+      break;
+    case 4:
+      if (k > 0){
+        digitalWrite(motor4dir1pin,HIGH);
+        digitalWrite(motor4dir2pin,LOW);
+      }
+      else if (k<0){
+        digitalWrite(motor4dir1pin,LOW);
+        digitalWrite(motor4dir2pin,HIGH);
+      }
+      else{
+        digitalWrite(motor4dir1pin,HIGH);
+        digitalWrite(motor4dir2pin,HIGH);
+      }
+      break;
+
+    
+  }
+
+
+  
+}
+
+void drive(int i,int pwm){ // drive(1) means drive forward
+  switch (i){
+    case 1: // drive forward
+      set_direction(1,1);
+      set_direction(2,1);
+      set_direction(3,1);
+      set_direction(4,1);
+      
+      break;
+    case 2: // strafe left
+      set_direction(1,1);
+      set_direction(2,-1);
+      set_direction(3,1);
+      set_direction(4,-1);
+      break;
+    case 3: // strafe right
+      set_direction(1,-1);
+      set_direction(2,1);
+      set_direction(3,-1);
+      set_direction(4,1);
+      break;
+    case 4: // reverse
+      set_direction(1,-1);
+      set_direction(2,-1);
+      set_direction(3,-1);
+      set_direction(4,-1);
+      break;
+  }
+
+  analogWrite(motor1pwmpin,pwm);
+  analogWrite(motor2pwmpin,pwm);
+  analogWrite(motor3pwmpin,pwm);
+  analogWrite(motor4pwmpin,pwm);
+    
+  
 }
