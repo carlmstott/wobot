@@ -207,8 +207,9 @@ case 2:
     //state 2, robot has squared itself to the backbaord. BEHAVIOR: robot translates forward. 
                   //EXIT CASE: HasHitLine=2, meaning robot is on closest line to hoops, can only exit to state 3
                   //NOTE: line hit is defined as both middle photoresitors returning black
-                  
   drive(1,0);
+  delay(500);  //delay .5 seconds, this might not be needed
+  drive(1,225); //go straight, we want to go fast.
 
 //Get sensor array data and compute position of line
   readLineSensor(sensorVal);
