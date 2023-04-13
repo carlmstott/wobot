@@ -351,7 +351,7 @@ void navigate() {
   //NOTE: line hit is defined as both middle photoresitors returning black
   //drive(1, 0);
   //delay(500);     //delay .5 seconds, this might not be needed
-  drive(1, 225);  //go straight, we want to go fast.
+  drive(1, 210);  //go straight, we want to go fast.
 
   //Get sensor array data and compute position of line
   readLineSensor(sensorVal);
@@ -383,10 +383,11 @@ void navigate() {
   Serial.println("-----------------");
   //delay(1000);
 
-  if (sensorvalue4 > 1500 && linesHit == 1 && TimeSinceHitLine > 250) {
+  if (sensorvalue4 > 1500 && linesHit == 1 && TimeSinceHitLine > 500) {
     Serial.println("hit the second line, looking for basket based on ir");
     state = BASKET;
   }
+  
   TimeSinceHitLine = millis() - TimeHitLine;
 
   if (prior_state != state) {
@@ -402,7 +403,7 @@ void orient() {
     prior_state = state;
   }
 
-  drive(5, 200);
+  drive(5, 130);
 
   // the below statements should have it such that the left ultrasonic sensor makes its measutment, then the second ultrasonic sensor makes its measurment.
   //yes I know its blocking code, but whats 30 microseconds amongst friends.
@@ -440,7 +441,7 @@ void orient() {
   deltaDistance = distance1 - distance2;
   
   Serial.println(deltaDistance);
-  if (abs(deltaDistance) <= 200 && distance2 < 50 && distance1 < 50) {
+  if (abs(deltaDistance) <= 1 && distance2 < 50 && distance1 < 50) {
     squareCounter = squareCounter + 1;  //the ideas with squarecounter is that the robot wont think its square if a rouge values happens, it will only think its square
                                         //if the ondition for being square is hit 3 times
     if (squareCounter > 3) {
