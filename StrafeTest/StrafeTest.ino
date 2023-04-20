@@ -24,6 +24,8 @@ int TimeHitLine = 0;
 int  TimeSinceHitLine=0;
 int linesHit=0;
 
+
+
 void setup() {
   //setup values for state 2, the reason why this is done first is that setupRSLK() declares a bunch of stuff, and a lot of it we want overwritten.
     Serial.begin(115200);
@@ -150,13 +152,16 @@ uint8_t lineColor = DARK_LINE;
 
 
 //THe below script is used for testing the line sensor 
- gain = (sensorVal[3]-sensorVal[5])/30
- if gain+pwm >225{
-  gain = 50; //this if statement prevents me from sending my motors a pwm value of over 225
- }
+// gain = (sensorVal[3]-sensorVal[5])/30
+//   if gain+pwm >225{
+//    gain = 50; //this if statement prevents me from sending my motors a pwm value of over 225
+//   }
+
+uint32_t linePos = getLinePosition(sensorCalVal,lineColor);
+gain = (linePos-4000)/60;
 
  //linefollow left
- drive(2, 175, gain);
+ strafe(1, 175, gain);
 
 
  //linefollow right, commented out for now, will test later
@@ -168,19 +173,8 @@ uint8_t lineColor = DARK_LINE;
 
 void strafe(int i,int pwm, gain){ // drive(1) means drive forward
   switch (i){
-    case 1: // drive forward
-      set_direction(1,1);
-      set_direction(2,1);
-      set_direction(3,1);
-      set_direction(4,1);
-
-    analogWrite(motor1pwmpin,pwm);
-    analogWrite(motor2pwmpin,pwm);
-    analogWrite(motor3pwmpin,pwm);
-    analogWrite(motor4pwmpin,pwm);
-      break;
       
-    case 2: // strafe left
+    case 1: // strafe left
       set_direction(1,1);
       set_direction(2,-1);
       set_direction(3,1);
@@ -193,6 +187,7 @@ void strafe(int i,int pwm, gain){ // drive(1) means drive forward
     analogWrite(motor4pwmpin,pwm+gain);
 */
                                                       //printstatements for testing
+                                                      Serial.println("we are straifing to the left")
                                                       Serial.println("wheels on the front side PWM input:");
                                                       Serial.print(pwm-gain);
                                                       Serial.println("wheels on the back side PWM input");
@@ -205,42 +200,22 @@ void strafe(int i,int pwm, gain){ // drive(1) means drive forward
       set_direction(3,-1);
       set_direction(4,1);
 
+/* //COMMENTED OUT FOR TESTING
     analogWrite(motor1pwmpin,pwm-gain);
     analogWrite(motor2pwmpin,pwm-gain);
     analogWrite(motor3pwmpin,pwm+gain);
     analogWrite(motor4pwmpin,pwm+gain);
+    */
+
+                                                              //printstatements for testing
+                                                      Serial.println("we are straifing to the right")
+                                                      Serial.println("wheels on the front side PWM input:");
+                                                      Serial.print(pwm-gain);
+                                                      Serial.println("wheels on the back side PWM input");
+                                                      Serial.print(pwm+gain);
       break;
-      
-    case 4: // reverse
-      set_direction(1,-1);
-      set_direction(2,-1);
-      set_direction(3,-1);
-      set_direction(4,-1);
-
-          analogWrite(motor1pwmpin,pwm);
-    analogWrite(motor2pwmpin,pwm);
-    analogWrite(motor3pwmpin,pwm);
-    analogWrite(motor4pwmpin,pwm);
-      break;
-      
-    case 5: //rotate in place to the left 
-    set_direction(1,-1);
-    set_direction(2,1);
-    set_direction(3,1);
-    set_direction(4,-1);
-
-        analogWrite(motor1pwmpin,pwm);
-    analogWrite(motor2pwmpin,pwm);
-    analogWrite(motor3pwmpin,pwm);
-    analogWrite(motor4pwmpin,pwm);
     
-  }
-
-
-
-  
-    
-  
+  }  
 }
 
 

@@ -141,10 +141,8 @@ void loop()
    * Uncomment the Serial line below to read linePos which is an estimate of the lateral position of the black line.
    */
    //LINEPOS should read 500 when the sensor 1 is above the line and read like 6000 or something when the 7th sensor is above the line
-   Serial.println(linePos);
-   if (linePos > 2000){
-   Serial.println("LinePose works as I expect");
-   }
+   Serial.println(sensorVal[6]);
+   delay(500);
 
 
   /*
