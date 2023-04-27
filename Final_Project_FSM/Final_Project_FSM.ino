@@ -20,6 +20,11 @@ const int motor1dir2pin = 17;
 const int motor2dir1pin = 15;
 const int motor2dir2pin = 14;
 const int motor2pwmpin = 11;
+bool isScanned = false;
+const int buffersize = 25;
+
+const int strafe_pwm = 100;
+bool isSquare = false; // for ir sensing purposes
 
 //variables declared for state 1
 int trigPin1 = 24;
@@ -57,9 +62,17 @@ int direction, navpwm, t0;
 
 float kpnav = .08;
 
+const float kpline = .004;
+const float kiline = 0.0005;
+
+int cumddistance;
+
+int counter;
+float distance1_buffer, distance2_buffer;
+
 
 const int shooterpin = 30;
-const int shooter_duration = 100; // milliseconds of how long to keep the switch open
+const int shooter_duration = 200; // milliseconds of how long to keep the switch open
 
 const int servopin = 9;
 
@@ -196,7 +209,24 @@ void simpleCalibrate() {
 
 
 
-
+void driveoneside(int i, int pwm){//-1 is left and 1 is right side
+  if (i > 0){
+    set_direction(1,1);
+    set_direction(4,1);
+    set_direction(2,-1);
+    set_direction(3,-1);
+  }
+  else{
+    set_direction(1,-1);
+    set_direction(4,-1);
+    set_direction(2,1);
+    set_direction(3,1);
+  }
+  analogWrite(motor1pwmpin, pwm);
+  analogWrite(motor2pwmpin, pwm);
+  analogWrite(motor3pwmpin, pwm);
+  analogWrite(motor4pwmpin, pwm);
+}
 
 
 
@@ -232,6 +262,12 @@ void drive(int i, int pwm) {  // drive(1) means drive forward
       set_direction(2, 1);
       set_direction(3, 1);
       set_direction(4, -1);
+      break;
+    case 6:  //rotate in place to the left
+      set_direction(1, 1);
+      set_direction(2, -1);
+      set_direction(3, -1);
+      set_direction(4, 1);
   }
 
   if (pwm != 0){
@@ -320,60 +356,90 @@ void basket() {
   int irMiddle = digitalRead(IRbeaconMiddle);
   int irRight = digitalRead(IRbeaconRight);
 
-  Serial.println();
+  Serial.println(irMiddle);
 
-  if (irLeft == 1) {
+  
+  digitalWrite(trigPin1, LOW);
+  delayMicroseconds(2);
+  digitalWrite(trigPin1, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin1, LOW);
+  duration1 = pulseIn(echoPin1, HIGH);
+  distance1 = duration1 * .017;
 
-    //motor 1 backward
-    //motor 4 backward
-    //motor 2 forward
-    //motor 3 forward
-    direction = 2;
+
+  //reading value from right sensor
+  digitalWrite(trigPin2, LOW);  //clear sensor
+  delayMicroseconds(2);
+  digitalWrite(trigPin2, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin2, LOW);
+  duration2 = pulseIn(echoPin2, HIGH);
+  distance2 = duration2 * .017;
+  int ddistance = abs(distance1-distance2);
+  
+  if (ddistance < 2){
+    isSquare = true;
+  }
+  else{
+    isSquare = false;
   }
 
-  if (irRight == 1) {
-
-    //motor 1 forward
-    //motor 4 forward
-    //motor 2 backward
-    //motor 3 backward
-    direction = 3;
-  }
-
-  if (irMiddle == 1) {
-    if (direction == 2) {  //this means the most recent direction that was sensed was left.
+    if (irLeft == 0) {
+  
       //motor 1 backward
       //motor 4 backward
       //motor 2 forward
       //motor 3 forward
-      drive(3,max_speed_pwm); // strafe right
+      direction = 2;
     }
-    if (direction == 3) {  //this means the most recent direction sensed was right.
+  
+    if (irRight == 0) {
+  
       //motor 1 forward
       //motor 4 forward
       //motor 2 backward
       //motor 3 backward
-      drive(2,max_speed_pwm); // strafe left
+      direction = 3;
     }
+  
+    if (irMiddle == 0) {
+      if (direction == 2) {  //this means the most recent direction that was sensed was left.
+        //motor 1 backward
+        //motor 4 backward
+        //motor 2 forward
+        //motor 3 forward
+        drive(3,strafe_pwm); // strafe right
+      }
+      if (direction == 3) {  //this means the most recent direction sensed was right.
+        //motor 1 forward
+        //motor 4 forward
+        //motor 2 backward
+        //motor 3 backward
+        drive(2,strafe_pwm); // strafe left
+      }
+  
+      readLineSensor(sensorVal);
+  
+      readCalLineSensor(sensorVal,
+                        sensorCalVal,
+                        sensorMinVal,
+                        sensorMaxVal,
+                        lineColor);
+    
+      if ((sensorVal[0]+sensorVal[1]+sensorVal[2]+sensorVal[5]+sensorVal[6]+sensorVal[7])/6 > 1900) {
+        //if thise condition is satisfied, we are right on top of a cross.
+        Serial.print("shooting...");
+        //state = SHOOT;
+      }
+  
+    }  //end of the middle check statement
 
-    readLineSensor(sensorVal);
 
-    readCalLineSensor(sensorVal,
-                      sensorCalVal,
-                      sensorMinVal,
-                      sensorMaxVal,
-                      lineColor);
-
-    if (sensorVal[0] > 2000 && sensorVal[1] > 2000 && sensorVal[2] > 2000 && sensorVal[3] > 2000 && sensorVal[4] > 2000 && sensorVal[5] > 2000 && sensorVal[6] > 2000 && sensorVal[7] > 2000) {
-      //if thise condition is satisfied, we are right on top of a cross.
-
-      state = SHOOT;
-    }
-
-  }  //end of the middle check statement
 
   if (prior_state != state) {
     drive(1, 0);
+    delay(1000);
   }
 }
 
@@ -382,6 +448,7 @@ void navigate() {
   if (prior_state != state) {
     prior_state = NAVIGATE;
     linesHit = 0;
+    
   }
 
   //state 2, robot has squared itself to the backbaord. BEHAVIOR: robot translates forward.
@@ -389,7 +456,75 @@ void navigate() {
   //NOTE: line hit is defined as both middle photoresitors returning black
   //drive(1, 0);
   //delay(500);     //delay .5 seconds, this might not be needed
-  drive(1, max_speed_pwm);  //go straight, we want to go fast.
+  if (linesHit == 0){
+    drive(1, max_speed_pwm-50);  //go straight, we want to go fast.
+  }
+  else{
+    
+    digitalWrite(trigPin1, LOW);
+    delayMicroseconds(2);
+    digitalWrite(trigPin1, HIGH);
+    delayMicroseconds(10);
+    digitalWrite(trigPin1, LOW);
+    duration1 = pulseIn(echoPin1, HIGH);
+    distance1 = duration1 * .017;
+    digitalWrite(trigPin2, LOW);  //clear sensor
+    delayMicroseconds(2);
+    digitalWrite(trigPin2, HIGH);
+    delayMicroseconds(10);
+    digitalWrite(trigPin2, LOW);
+    duration2 = pulseIn(echoPin2, HIGH);
+    distance2 = duration2 * .017;
+
+
+    /*
+    counter ++;
+    counter = (counter % buffersize) + 1;
+    distance1_buffer = (distance1_buffer + distance1)/counter;
+    distance2_buffer = (distance2_buffer + distance2)/counter;
+    */
+    int ddistance = duration1-duration2;
+    int threshold = 100;
+    // duration 2500 min
+    cumddistance = cumddistance + ddistance;
+    if (cumddistance > 10000000){
+      cumddistance = 10000000;
+    }
+    int pwmfb = abs(ddistance)*kpline + kiline*abs(cumddistance);
+    int pwm = pwmfb + 70;
+    if (pwm > 255){
+      pwm = 255;
+    }
+    if (ddistance > threshold){
+      driveoneside(1,pwm);
+      driveoneside(-1,pwm/2);
+    }
+    else if (ddistance < -threshold){
+      driveoneside(-1,pwm);
+      driveoneside(1,pwm/2);
+    }
+    else{
+      drive(1,max_speed_pwm/3);
+    }
+    Serial.println(pwmfb);
+
+ 
+    /*
+    if (ddistance < -threshold){
+        drive(5,max_speed_pwm/3);
+      }
+      else if (ddistance > threshold){
+        drive(6,max_speed_pwm/3);
+      }
+      else{
+        drive(1,max_speed_pwm/3);
+
+    }
+    */
+    
+
+    
+  }
 
   //Get sensor array data and compute position of line
   readLineSensor(sensorVal);
@@ -430,7 +565,7 @@ void navigate() {
 
   if (prior_state != state) {
     drive(1, 0);
-    delay(500);
+    delay(750);
   }
 }
 
@@ -440,6 +575,7 @@ void orient() {
 
   if (state != prior_state) {  //code for entering this state
     prior_state = state;
+    isScanned = false;
   }
 
   if (navpwm > max_speed_pwm){
@@ -500,6 +636,7 @@ void orient() {
                                         //if the ondition for being square is hit 3 times
     if (squareCounter > 3) {
       state = NAVIGATE;
+      
       //Serial.println("made it to state 2");
     }
   }
@@ -510,7 +647,7 @@ void orient() {
   if (state != prior_state) {  // clean up for leaving this state
     Serial.println("leaving Orienting state");
     drive(1, 0);  //set all motors forward but not moving
-    delay(500); // pause
+    delay(1000); // pause
   }
 }
 
@@ -520,9 +657,15 @@ void shoot(){
     t0 = millis();
   }
 
-  shootball(); // shoots the ball
+  digitalWrite(shooterpin,LOW);
+  delay(5000);
+  digitalWrite(shooterpin,HIGH);
+  delay(200);
+  digitalWrite(shooterpin,LOW);
+  //shootball(); // shoots the ball
   loadball();
-  state = BASKET;
+  //delay(5000); // comment out
+  //state = BASKET; 
 
   if (state != prior_state){
     Serial.println("leaving shooting state");
