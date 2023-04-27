@@ -5,6 +5,7 @@ Servo feederServo;
 
 
 const int motorbias = 0;
+const int max_speed_pwm = 200; // cap sinceo our motors are really fast and powerful
 
 //variables declared for state 1
 const int motor3pwmpin = 40;
@@ -22,9 +23,9 @@ const int motor2pwmpin = 11;
 
 //variables declared for state 1
 int trigPin1 = 24;
-int trigPin2 = 26;
+int trigPin2 = 29;
 int echoPin1 = 23;
-int echoPin2 = 25;
+int echoPin2 = 28;
 long duration1;
 long distance1;
 long duration2;
@@ -54,11 +55,11 @@ int IRbeaconMiddle = 6;
 int IRbeaconRight = 8;
 int direction, navpwm, t0;
 
-float kpnav = .34;
+float kpnav = .08;
 
 
 const int shooterpin = 30;
-const int shoot_duration = 100; // milliseconds of how long to keep the switch open
+const int shooter_duration = 100; // milliseconds of how long to keep the switch open
 
 const int servopin = 9;
 
@@ -345,14 +346,14 @@ void basket() {
       //motor 4 backward
       //motor 2 forward
       //motor 3 forward
-      drive(3,255); // strafe right
+      drive(3,max_speed_pwm); // strafe right
     }
     if (direction == 3) {  //this means the most recent direction sensed was right.
       //motor 1 forward
       //motor 4 forward
       //motor 2 backward
       //motor 3 backward
-      drive(2,255); // strafe left
+      drive(2,max_speed_pwm); // strafe left
     }
 
     readLineSensor(sensorVal);
@@ -388,7 +389,7 @@ void navigate() {
   //NOTE: line hit is defined as both middle photoresitors returning black
   //drive(1, 0);
   //delay(500);     //delay .5 seconds, this might not be needed
-  drive(1, 210);  //go straight, we want to go fast.
+  drive(1, max_speed_pwm);  //go straight, we want to go fast.
 
   //Get sensor array data and compute position of line
   readLineSensor(sensorVal);
@@ -406,7 +407,7 @@ void navigate() {
   int sensorvalue4 = sensorVal[4];
 
   //Serial.println(TimeSinceHitLine);
-  if (sensorvalue4 > 1500 && linesHit == 0) {  //the less than statement here should make it such there there is a 1 second delay until a linehit will register again
+  if (sensorvalue4 > 2300 && linesHit == 0) {  //the less than statement here should make it such there there is a 1 second delay until a linehit will register again
     //Serial.println("hit the first line");
     TimeHitLine = millis();
     linesHit = 1;
@@ -420,7 +421,7 @@ void navigate() {
   Serial.println("-----------------");
   //delay(1000);
 
-  if (sensorvalue4 > 1500 && linesHit == 1 && TimeSinceHitLine > 500) {
+  if (sensorvalue4 > 2300 && linesHit == 1 && TimeSinceHitLine > 500) {
     Serial.println("hit the second line, looking for basket based on ir");
     state = BASKET;
   }
@@ -441,8 +442,8 @@ void orient() {
     prior_state = state;
   }
 
-  if (navpwm > 255){
-    navpwm = 255;
+  if (navpwm > max_speed_pwm){
+    navpwm = max_speed_pwm;
   }
   drive(5, navpwm);
 
@@ -481,13 +482,13 @@ void orient() {
 
   deltaDistance = distance1 - distance2;
 
-  if (distance1 < 50 || distance2< 50){
+  if (distance1 < 40 || distance2< 40){
     
-    navpwm = 80 + kpnav*abs(deltaDistance);
+    navpwm = 65 + kpnav*abs(deltaDistance);
   
   }
   else{
-    navpwm = 255;
+    navpwm = max_speed_pwm;
   }
   
   Serial.print(navpwm); Serial.print(",");
@@ -521,7 +522,7 @@ void shoot(){
 
   shootball(); // shoots the ball
   loadball();
-  state = NAVIGATE;
+  state = BASKET;
 
   if (state != prior_state){
     Serial.println("leaving shooting state");
@@ -539,14 +540,14 @@ void shootball(){
 
 void loadball(){
   for (int angle = 140; angle >= 0; angle -= 70) {
-    myServo.write(angle);  // Set servo angle
+    feederServo.write(angle);  // Set servo angle
     delay(10);  // Short delay for smoother motion
   }
   delay(350);
   
 
   for (int angle = 0; angle <= 140; angle += 70) {
-    myServo.write(angle);  // Set servo angle
+    feederServo.write(angle);  // Set servo angle
     delay(10);  // Short delay for smoother motion
   }
   
