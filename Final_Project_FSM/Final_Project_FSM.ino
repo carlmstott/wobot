@@ -1,5 +1,10 @@
 #include "SimpleRSLK.h"
+#include <Servo.h>
 
+Servo feederServo;
+
+
+const int motorbias = 0;
 
 //variables declared for state 1
 const int motor3pwmpin = 40;
@@ -47,7 +52,15 @@ uint8_t lineColor = DARK_LINE;
 int IRbeaconLeft = 5;
 int IRbeaconMiddle = 6;
 int IRbeaconRight = 8;
-int direction;
+int direction, navpwm, t0;
+
+float kpnav = .34;
+
+
+const int shooterpin = 30;
+const int shoot_duration = 100; // milliseconds of how long to keep the switch open
+
+const int servopin = 9;
 
 enum states {  // list all states
   NONE,
@@ -68,7 +81,7 @@ void setup() {
 
   setupRSLK();
   /* Left button on Launchpad */
-  setupWaitBtn(LP_LEFT_BTN);
+  setupWaitBtn(LP_RIGHT_BTN);
   /* Red led in rgb led */
   setupLed(RED_LED);
 
@@ -92,6 +105,14 @@ void setup() {
   pinMode(IRbeaconLeft, INPUT);
   pinMode(IRbeaconMiddle, INPUT);  //in the demo these are pullups
   pinMode(IRbeaconRight, INPUT);
+
+  pinMode(shooterpin, OUTPUT);
+
+  digitalWrite(shooterpin, LOW);
+
+  
+
+  feederServo.attach(servopin);
 
   prior_state = NONE;
   state = ORIENT;
@@ -122,6 +143,12 @@ void loop() {
     case BASKET:
       basket();
       break;
+    
+    case SHOOT:
+      shoot();
+      break;
+
+   
   }
 
 }  //loop ends here
@@ -134,7 +161,7 @@ void floorCalibration() {
   String btnMsg = "Push left button on Launchpad to begin calibration.\n";
   btnMsg += "Make sure the robot is on the floor away from the line.\n";
   /* Wait until button is pressed to start robot */
-  waitBtnPressed(LP_LEFT_BTN, btnMsg, RED_LED);
+  waitBtnPressed(LP_RIGHT_BTN, btnMsg, RED_LED);
 
   delay(500);
 
@@ -145,7 +172,7 @@ void floorCalibration() {
   btnMsg = "Push left button on Launchpad to begin line following.\n";
   btnMsg += "Make sure the robot is on the line.\n";
   /* Wait until button is pressed to start robot */
-  waitBtnPressed(LP_LEFT_BTN, btnMsg, RED_LED);
+  waitBtnPressed(LP_RIGHT_BTN, btnMsg, RED_LED);
   delay(1000);
 
   //enableMotor(BOTH_MOTORS); leftover from RSLK code, dont think it has a use.
@@ -206,10 +233,18 @@ void drive(int i, int pwm) {  // drive(1) means drive forward
       set_direction(4, -1);
   }
 
+  if (pwm != 0){
   analogWrite(motor1pwmpin, pwm);
-  analogWrite(motor2pwmpin, pwm);
-  analogWrite(motor3pwmpin, pwm);
+  analogWrite(motor2pwmpin, pwm+motorbias);
+  analogWrite(motor3pwmpin, pwm+motorbias);
   analogWrite(motor4pwmpin, pwm);
+  }
+  else{
+    analogWrite(motor1pwmpin, pwm);
+    analogWrite(motor2pwmpin, pwm);
+    analogWrite(motor3pwmpin, pwm);
+    analogWrite(motor4pwmpin, pwm);
+  }
 }
 
 
@@ -283,6 +318,8 @@ void basket() {
   int irLeft = digitalRead(IRbeaconLeft);
   int irMiddle = digitalRead(IRbeaconMiddle);
   int irRight = digitalRead(IRbeaconRight);
+
+  Serial.println();
 
   if (irLeft == 1) {
 
@@ -392,6 +429,7 @@ void navigate() {
 
   if (prior_state != state) {
     drive(1, 0);
+    delay(500);
   }
 }
 
@@ -403,7 +441,10 @@ void orient() {
     prior_state = state;
   }
 
-  drive(5, 130);
+  if (navpwm > 255){
+    navpwm = 255;
+  }
+  drive(5, navpwm);
 
   // the below statements should have it such that the left ultrasonic sensor makes its measutment, then the second ultrasonic sensor makes its measurment.
   //yes I know its blocking code, but whats 30 microseconds amongst friends.
@@ -439,9 +480,21 @@ void orient() {
   //                                              Serial.println(duration2);
 
   deltaDistance = distance1 - distance2;
+
+  if (distance1 < 50 || distance2< 50){
+    
+    navpwm = 80 + kpnav*abs(deltaDistance);
   
+  }
+  else{
+    navpwm = 255;
+  }
+  
+  Serial.print(navpwm); Serial.print(",");
+  Serial.print(distance1); Serial.print(",");
+  Serial.print(distance2); Serial.print(",");
   Serial.println(deltaDistance);
-  if (abs(deltaDistance) <= 1 && distance2 < 50 && distance1 < 50) {
+  if (abs(duration1-duration2) <= 200 && distance2 < 40 && distance1 < 40) {
     squareCounter = squareCounter + 1;  //the ideas with squarecounter is that the robot wont think its square if a rouge values happens, it will only think its square
                                         //if the ondition for being square is hit 3 times
     if (squareCounter > 3) {
@@ -449,9 +502,54 @@ void orient() {
       //Serial.println("made it to state 2");
     }
   }
+  else{
+    squareCounter = 0;
+  }
 
   if (state != prior_state) {  // clean up for leaving this state
     Serial.println("leaving Orienting state");
     drive(1, 0);  //set all motors forward but not moving
+    delay(500); // pause
   }
+}
+
+void shoot(){
+  if (prior_state != state){
+    prior_state = state;
+    t0 = millis();
+  }
+
+  shootball(); // shoots the ball
+  loadball();
+  state = NAVIGATE;
+
+  if (state != prior_state){
+    Serial.println("leaving shooting state");
+
+  }
+}
+
+void shootball(){
+  digitalWrite(shooterpin,HIGH);
+  if ((millis()-t0) > shooter_duration){
+    digitalWrite(shooterpin, LOW); 
+  }
+
+}
+
+void loadball(){
+  for (int angle = 140; angle >= 0; angle -= 70) {
+    myServo.write(angle);  // Set servo angle
+    delay(10);  // Short delay for smoother motion
+  }
+  delay(350);
+  
+
+  for (int angle = 0; angle <= 140; angle += 70) {
+    myServo.write(angle);  // Set servo angle
+    delay(10);  // Short delay for smoother motion
+  }
+  
+  delay(1500);  // Delay for 2 seconds
+
 }
