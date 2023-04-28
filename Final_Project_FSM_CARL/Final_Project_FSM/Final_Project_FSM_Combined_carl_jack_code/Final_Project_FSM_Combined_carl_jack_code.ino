@@ -233,7 +233,7 @@ case 1: { //state 1, 1the robot has been placed down and has not squared itself 
 
 drive(5,navpwm);
   }else{
-    drive(5,200);
+    drive(5,200); //THIS IS THE DEFAULT VALUE FOR DRIVE
   }
   //ABOVE BEING TESTED
   
@@ -244,7 +244,7 @@ drive(5,navpwm);
         if (squareCounter > 2){
           Serial.println("made it to state 2");
           drive(1,0);
-          delay(50000);
+          delay(500);
          //delay .5 seconds, this helps with visual conformation that we have made it to the next state.
         state = 2;
        
@@ -264,7 +264,6 @@ case 2:
                   //EXIT CASE: HasHitLine=2, meaning robot is on closest line to hoops, can only exit to state 3
                   //NOTE: line hit is defined as both middle photoresitors returning black
                   
-  drive(1,200); //go straight, we want to go fast.
 
 //Get sensor array data and compute position of line
   readLineSensor(sensorVal);
@@ -280,6 +279,9 @@ case 2:
                                    
   
 
+if (linesHit == 0){
+  drive(1,200); //go straight, we want to go fast.
+}
 
 if (linesHit == 1) { //jacks control system activates after we have hit the first line
 //this reads ultrasonic sensors for control system that keeps us squared to the back wall
@@ -340,7 +342,7 @@ if (sensorVal[7] > 1500 && linesHit==0) {//sensor 7 is the one in the front
  TimeSinceHitLine=millis()-TimeHitLine;
 }
 
-if(sensorVal[7] > 1500 && linesHit==1 && TimeSinceHitLine > 800){
+if(sensorVal[7] > 1500 && linesHit==1 && TimeSinceHitLine > 500){
 //if(sensorVal[4] > 1500 && linesHit==1 && TimeSinceHitLine > 800){
   Serial.println("hit the second line, entering state 3");
   drive(1,0);
