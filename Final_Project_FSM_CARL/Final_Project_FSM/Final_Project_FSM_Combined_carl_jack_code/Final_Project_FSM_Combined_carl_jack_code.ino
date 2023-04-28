@@ -66,8 +66,8 @@ int linesHit=0;
 //below lines are declarations jack uses for the pwm control system for squaring against the back wall
 int navpwm, t0;
 float kpnav = .08;
-const float kpline = .004;
-const float kiline = 0.0005;
+const float kpline = .005; //from .1-.5
+const float kiline = 0.0005; //from 0-.0005
 int cumddistance;
 int counter;
 float distance1_buffer, distance2_buffer;
@@ -301,33 +301,44 @@ digitalWrite(trigPin1, LOW);
     duration2 = pulseIn(echoPin2, HIGH);
     distance2 = duration2 * .017;
 
-}
-
-//the below back wall squaring control system made by Jack Quao
-int ddistance = duration1-duration2;
-    int threshold = 100;
+    //the below back wall squaring control system made by Jack Quao
+    int ddistance = duration1-duration2;
+    int threshold = 150; //changed from 150-300-150
     // duration 2500 min
     cumddistance = cumddistance + ddistance;
     if (cumddistance > 10000000){
       cumddistance = 10000000;
     }
     int pwmfb = abs(ddistance)*kpline + kiline*abs(cumddistance);
-    int pwm = pwmfb + 70;
+    int pwm = pwmfb + 80;
     if (pwm > 255){
       pwm = 255;
     }
     if (ddistance > threshold){
       driveoneside(1,pwm);
-      driveoneside(-1,pwm/2);
+      driveoneside(-1,pwm*2/3);
     }
     else if (ddistance < -threshold){
       driveoneside(-1,pwm);
-      driveoneside(1,pwm/2);
+      driveoneside(1,pwm*2/3);
     }
     else{
-      drive(1,max_speed_pwm/3);
-    }
+      if (distance1 < 85) {
+      drive(1,max_speed_pwm/2);
+      }else{
+        drive(1,85);
+      }
+      }
+    Serial.print("pwmfb:");
     Serial.println(pwmfb);
+    Serial.print("distance1:");
+    Serial.println(distance1);
+    Serial.print("distance2:");
+    Serial.println(distance2);
+
+}
+
+
 
 
 
@@ -335,18 +346,18 @@ int ddistance = duration1-duration2;
 
 //below 2 if statements check to see when the forwardmost sensor (sensor 7)
 //has hit the first line, and then the second line
-if (sensorVal[7] > 1500 && linesHit==0) {//sensor 7 is the one in the front
+if (sensorVal[6] > 2000 && linesHit==0) {//sensor 7 is the one in the front
   //Serial.println("hit the first line");
   TimeHitLine=millis();
  linesHit=1;
  TimeSinceHitLine=millis()-TimeHitLine;
 }
 
-if(sensorVal[7] > 1500 && linesHit==1 && TimeSinceHitLine > 500){
+if(sensorVal[6] > 2000 && linesHit==1 && TimeSinceHitLine > 500){
 //if(sensorVal[4] > 1500 && linesHit==1 && TimeSinceHitLine > 800){
   Serial.println("hit the second line, entering state 3");
   drive(1,0);
-  delay(500); //we stop for a half second to make it clear we are entering another state
+  delay(1000); //we stop for a second to make it clear we are entering another state and to dispell inertia
   state = 3;
   
   
