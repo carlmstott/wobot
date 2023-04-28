@@ -192,7 +192,7 @@ switch (state) {
 case 1: { //state 1, 1the robot has been placed down and has not squared itself to the backbaord. BEHAVIOR: rotates in a left turn. 
                     //EXIT CASE: both ultrasonics sensors read the same value within a tolerence of 3 cm, can only exit to state 2
   
-     drive(5,200);
+     //drive(5,200);
 
     // the below statements should have it such that the left ultrasonic sensor makes its measutment, then the second ultrasonic sensor makes its measurment.
     //this is blocking code but it blocks for so little time that it makes no difference.
@@ -227,12 +227,13 @@ case 1: { //state 1, 1the robot has been placed down and has not squared itself 
 
 //jack's P control for squaring against the wall BEING TESTED
   if (distance1 < 40 || distance2< 40){
-    
-    navpwm = 65 + kpnav*abs(deltaDistance);
+
+    navpwm = 65 + kpnav*abs(distance1-distance2);
     
 
 drive(5,navpwm);
-  
+  }else{
+    drive(5,200);
   }
   //ABOVE BEING TESTED
   
@@ -240,7 +241,7 @@ drive(5,navpwm);
       if (abs(deltaDistance) <= 200 && distance2 <50 && distance1 <50) {
         squareCounter=squareCounter+1; //the ideas with squarecounter is that the robot wont think its square if a rouge values happens, it will only think its square
                                         //if the ondition for being square is hit 3 times
-        if (squareCounter > 3){
+        if (squareCounter > 2){
           Serial.println("made it to state 2");
           drive(1,0);
           delay(50000);
@@ -412,21 +413,21 @@ if (input-pwm<-255){
 
 
 
-if (isLeft=0){
+if (isLeft==0){
   //NOTE that these conditions are met when they read a signel of zero becasue we use a pullup resistor circuit for the IR sensors.
   strafe(1, pwm, input);
  
   direction=1;
 }
 
- if (isRight=0){
+ if (isRight==0){
   strafe(2, pwm, input);
 
   direction=2;
 
 }
 
-if (isMiddle=0){ //meaning the IR sensor in the middle is seeing a beacon, meaning we are VERY CLOSE to a cross
+if (isMiddle==0){ //meaning the IR sensor in the middle is seeing a beacon, meaning we are VERY CLOSE to a cross
 if (direction==1){ //this means the most recent direction that was sensed was left. 
   //want to drive, NOT STRAIF, to the left. we dont want our control system to freak out when linePos shoots up to 7000
  strafe(1, pwm, input);
