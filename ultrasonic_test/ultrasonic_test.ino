@@ -23,7 +23,7 @@ void loop() {
   duration1 = pulseIn(echoPin1, HIGH);
   distance1 = duration1 * .017;
 
-
+  delayMicroseconds(2000);
   //reading value from right sensor
   digitalWrite(trigPin2, LOW);  //clear sensor
   delayMicroseconds(2);
@@ -33,5 +33,5 @@ void loop() {
   duration2 = pulseIn(echoPin2, HIGH);
   distance2 = duration2 * .017;
   int ddistance = abs(distance1-distance2);
-  Serial.print(duration1); Serial.print(",");Serial.println(duration2);
+  Serial.print(distance1); Serial.print(",");Serial.println(distance2);
 }
