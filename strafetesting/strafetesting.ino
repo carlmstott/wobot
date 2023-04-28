@@ -8,7 +8,7 @@ const int max_speed_pwm = 200;  // cap sinceo our motors are really fast and pow
 
 
 
-int state = 1;  //we start in state 1
+int state = 3;  //we start in state 1
 //variables declared for state 1
 const int motor3pwmpin = 40;
 const int motor3dir1pin = 39;
@@ -17,8 +17,8 @@ const int motor4dir1pin = 37;
 const int motor4dir2pin = 36;
 const int motor4pwmpin = 35;
 const int motor1pwmpin = 19;
-const int motor1dir1pin = 17;
-const int motor1dir2pin = 18;
+const int motor1dir1pin = 18;
+const int motor1dir2pin = 17;
 const int motor2dir1pin = 15;
 const int motor2dir2pin = 14;
 const int motor2pwmpin = 11;
@@ -393,69 +393,11 @@ void loop() {
 
 
         uint32_t linePos = getLinePosition(sensorCalVal, lineColor);
+        drive(2,255);
+        delay(3000);
+        drive(3,255);
+        delay(3000);
 
-        gain = ((sensorVal[6] - 932) - (sensorVal[0] - 1147) * 1.11) / 26 - 7;  //need to map -1300 <-> 1300 onto -50 <-> 50 gain is the same as error
-
-
-        intergral = intergral + gain;
-        //Serial.println(intergral);
-        //Serial.println(gain);
-
-
-        input = gain + .001 * intergral;
-
-        if (intergral > 50) {
-          intergral = 50;
-        }
-        if (intergral < -50) {
-          intergral = -50;
-        }
-
-
-        if (input + pwm_strafe > 225) {
-          input = 225;  //this if statement prevents me from sending my motors a pwm value of over 225
-        }
-        if (input - pwm_strafe < -255) {
-          input = -pwm_strafe;
-        }
-        //Serial.println(input+pwm);
-
-
-
-        // ir sensor strafing logic
-
-        if (isLeft == 0) {
-          //NOTE that these conditions are met when they read a signel of zero becasue we use a pullup resistor circuit for the IR sensors.
-          strafe(1, pwm_strafe, input);
-          direction = 1;
-        }
-
-        if (isRight == 0) {
-          strafe(2, pwm_strafe, input);
-
-          direction = 2;
-        }
-
-        if (isMiddle == 0) {     //meaning the IR sensor in the middle is seeing a beacon, meaning we are VERY CLOSE to a cross
-          if (direction == 1) {  //this means the most recent direction that was sensed was left.
-            //want to drive, NOT STRAIF, to the left. we dont want our control system to freak out when linePos shoots up to 7000
-            strafe(1, pwm_strafe, input);
-          }
-          if (direction == 2) {  //this means the most recent direction sensed was right.
-            //want to drive, NOT STRAIF, to the right. we dont want our control system to freak out when  linePos shoots up to 7000
-            strafe(2, pwm_strafe, input);
-          }
-
-
-          if (sensorVal[0] > 1500 && sensorVal[1] > 1500 && sensorVal[2] > 1500 && sensorVal[3] > 1500 && sensorVal[4] > 1500 && sensorVal[5] > 1500 && sensorVal[6] > 1500 && sensorVal[7] > 1500) {
-            //if thise condition is satisfied, we are right on top of a cross.
-            direction = 0; //resetting last seen direction when we are lined up on the correct cross
-            drive(1, 0);  //we want to stop driving when we change state for visual conformation and to dissepate inertia.
-            delay(500);   //taking a .5 second pause in order to visually verify we are making it to the next state
-            state = 4;
-          }
-
-        }  //end of the middle IR sensor check statement
       }
       break;
 
