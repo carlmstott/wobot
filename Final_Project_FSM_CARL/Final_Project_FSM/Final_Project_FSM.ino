@@ -2,7 +2,12 @@
 #include <Servo.h>
 Servo feederServo;
 const int motorbias = 0;
+<<<<<<< Updated upstream
 const int max_speed_pwm = 200; // cap sinceo our motors are really fast and powerful
+=======
+//UNSURE IF THIS LINE IS GOOD OR NEEDED
+const int max_speed_pwm = 200; // cap since our motors are really fast and powerful 
+>>>>>>> Stashed changes
 
 
 
@@ -60,7 +65,11 @@ int TimeHitLine = 0;
 int  TimeSinceHitLine=0;
 int linesHit=0;
 //below lines are declarations jack uses for the pwm control system for squaring against the back wall
+<<<<<<< Updated upstream
 int direction, navpwm, t0;
+=======
+int navpwm, t0;
+>>>>>>> Stashed changes
 float kpnav = .08;
 const float kpline = .004;
 const float kiline = 0.0005;
@@ -73,25 +82,40 @@ float distance1_buffer, distance2_buffer;
 const int shooterpin = 30;
 const int shooter_duration = 200; // milliseconds of how long to keep the switch open
 const int servopin = 9;
+<<<<<<< Updated upstream
 
+=======
+int shootPin=30;
+>>>>>>> Stashed changes
 
 
 
 
 //variables and declarations for state 3
 //pins
+<<<<<<< Updated upstream
 int IRbeaconLeft =9;
 int IRbeaconMiddle =8;
 int IRbeaconRight =10;
 int direction;
 int gain=0; //this is used for straifing
 int pwm = 0;
+=======
+int IRbeaconLeft =5;
+int IRbeaconMiddle =6;
+int IRbeaconRight =8;
+int direction;
+//int pwm = 0; double defined
+>>>>>>> Stashed changes
 
 
 
 
+<<<<<<< Updated upstream
 int shootPin=31;
 //pin that sets the shooting relay high
+=======
+>>>>>>> Stashed changes
 
 
 
@@ -128,6 +152,13 @@ startTime=micros(); //Timer used for ultrasonic sensors
  pinMode(IRbeaconRight, INPUT);
 
 
+<<<<<<< Updated upstream
+=======
+//shooter and feeder pin declarations, written by jack
+  pinMode(shooterpin, OUTPUT);
+  digitalWrite(shooterpin, LOW);
+feederServo.attach(servopin);
+>>>>>>> Stashed changes
 
 }
 
@@ -267,6 +298,7 @@ case 2:
 
                                    
   
+<<<<<<< Updated upstream
 //Serial.println(TimeSinceHitLine);
 if (sensorVal[7] > 1500 && linesHit==0) {//sensor 7 is the one in the front
   //Serial.println("hit the first line");
@@ -275,6 +307,58 @@ if (sensorVal[7] > 1500 && linesHit==0) {//sensor 7 is the one in the front
  TimeSinceHitLine=millis()-TimeHitLine;
 }
 
+=======
+
+
+if (linesHit == 1) { //jacks control system activates after we have hit the first line
+
+//this reads ultrasonic sensors for control system that keeps us squared to the back wall
+//while we translate forward, written by jack
+digitalWrite(trigPin1, LOW);
+    delayMicroseconds(2);
+    digitalWrite(trigPin1, HIGH);
+    delayMicroseconds(10);
+    digitalWrite(trigPin1, LOW);
+    duration1 = pulseIn(echoPin1, HIGH);
+    distance1 = duration1 * .017;
+    digitalWrite(trigPin2, LOW);  //clear sensor
+    delayMicroseconds(2);
+    digitalWrite(trigPin2, HIGH);
+    delayMicroseconds(10);
+    digitalWrite(trigPin2, LOW);
+    duration2 = pulseIn(echoPin2, HIGH);
+    distance2 = duration2 * .017;
+
+}
+
+//the below back wall squaring control system made by Jack Quao
+int ddistance = duration1-duration2;
+    int threshold = 100;
+    // duration 2500 min
+    cumddistance = cumddistance + ddistance;
+    if (cumddistance > 10000000){
+      cumddistance = 10000000;
+    }
+    int pwmfb = abs(ddistance)*kpline + kiline*abs(cumddistance);
+    int pwm = pwmfb + 70;
+    if (pwm > 255){
+      pwm = 255;
+    }
+    if (ddistance > threshold){
+      driveoneside(1,pwm);
+      driveoneside(-1,pwm/2);
+    }
+    else if (ddistance < -threshold){
+      driveoneside(-1,pwm);
+      driveoneside(1,pwm/2);
+    }
+    else{
+      drive(1,max_speed_pwm/3);
+    }
+    Serial.println(pwmfb);
+
+
+>>>>>>> Stashed changes
 
 
 /*
@@ -285,6 +369,18 @@ Serial.println("-----------------");
 delay(1000);
 */
 
+<<<<<<< Updated upstream
+=======
+//below 2 if statements check to see when the forwardmost sensor (sensor 7)
+//has hit the first line, and then the second line
+if (sensorVal[7] > 1500 && linesHit==0) {//sensor 7 is the one in the front
+  //Serial.println("hit the first line");
+  TimeHitLine=millis();
+ linesHit=1;
+ TimeSinceHitLine=millis()-TimeHitLine;
+}
+
+>>>>>>> Stashed changes
 if(sensorVal[7] > 1500 && linesHit==1 && TimeSinceHitLine > 800){
 //if(sensorVal[4] > 1500 && linesHit==1 && TimeSinceHitLine > 800){
   Serial.println("hit the second line, entering state 3");
@@ -432,8 +528,30 @@ int isRight = digitalRead(IRbeaconRight);
 }  //loop ends here
 
 
+<<<<<<< Updated upstream
 
 
+=======
+//this function was written by jack, is used to center the robot while it translates forward in state 2
+void driveoneside(int i, int pwm){//-1 is left and 1 is right side
+  if (i > 0){
+    set_direction(1,1);
+    set_direction(4,1);
+    set_direction(2,-1);
+    set_direction(3,-1);
+  }
+  else{
+    set_direction(1,-1);
+    set_direction(4,-1);
+    set_direction(2,1);
+    set_direction(3,1);
+  }
+  analogWrite(motor1pwmpin, pwm);
+  analogWrite(motor2pwmpin, pwm);
+  analogWrite(motor3pwmpin, pwm);
+  analogWrite(motor4pwmpin, pwm);
+}
+>>>>>>> Stashed changes
 
 
 
@@ -595,8 +713,14 @@ void shoot(){
     digitalWrite(shootPin, LOW);
 }
 
+<<<<<<< Updated upstream
 }
 
 void load(){
   Serial.println("LOOOOAAADDDDDD")
+=======
+
+void load(){
+  Serial.println("LOOOOAAADDDDDD");
+>>>>>>> Stashed changes
 }
