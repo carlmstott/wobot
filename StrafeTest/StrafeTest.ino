@@ -10,7 +10,10 @@ const int motor1dir2pin = 17;
 const int motor2dir1pin = 15;
 const int motor2dir2pin = 14;
 const int motor2pwmpin = 11;
-int gain; //I will be messing with this outside of the drive function, so I need to decloare it above unlike PWM 
+double gain; //I will be messing with this outside of the drive function, so I need to decloare it above unlike PWM 
+double intergral; //adding intergral control
+int pwm=125;
+int input; //combination of intergral and proportonal gain
 
 
 //variables and declarations for state 2 RSLK library webpage https://fcooper.github.io/Energia-RSLK-Library/_simple_r_s_l_k_8h.html#afa1b08c477adccb29dc3ad97a58b63c7
@@ -36,8 +39,9 @@ void setup() {
   /* Red led in rgb led */
   setupLed(RED_LED);
   clearMinMax(sensorMinVal,sensorMaxVal);
+  
 
-
+intergral=0;
 }
 
 void floorCalibration() {
@@ -106,11 +110,11 @@ uint8_t lineColor = DARK_LINE;
 //    It seems like I only need a single gain value for my controller, and if I need to rotate left I add to 2/3 and subtract from 1/4.
 //    but if I need to rotate to the right, I add to 1/4 and subtract from 2/3.
 //
-//    the sensor values that I care about are: 1, 3, 5, and 7.
+//    the sensor values that I care about are: 0 and 6
 //
-//    I think the two values that I am going to be examining for my control system are the value of 3 and 5. it looks like they oscilate between 1000 and 2500.
+//    I mapped the outputs of 0 and 6 to be between 0 and 1300, then used  gain = ((sensorVal[0]-1147)*1.11-(sensorVal[6]-932))/26;
+//    to map gain from -1300 <-> 1300 onto -50 <-> 50
 //
-//    My gain is going to be a function of 3 - 5.
 //
 //    IF WE ARE GOING LEFT:
 //          IF 3 - 5 is posative
@@ -148,30 +152,83 @@ uint8_t lineColor = DARK_LINE;
 //  so I need to map -1500 through 1500 onto -50 - 50
 //  so my gain will be (3 - 5)/30 = gain, and my base motor PWM inputs will be 175.
 
+//OK i have to control position on the line using a forward backward command instead of a rotation command
+//TOO MAKE ROBOT MOVE BACKWARD WHILE TRANSLATING left
+//       MORE  LESS
+//      LESS   MORE
+//too make robot move forward while translating left
+//      LESS      MORE
+//      MORE      LESS
+
+//REMEMBER gain is POSATIVE when sensor zero sees line, meaning I need to move backwards when gain is posative.
+//during left translation, I need to add gain to motors 2 and 4 and subtract gain from motors 1 and 3
+
+//TOO MAKE THE ROBOT MOVE FORWARD WHILE TRANSLATING RIGHT:
+
+
+ readLineSensor(sensorVal);
+ readCalLineSensor(sensorVal,sensorCalVal,sensorMinVal,sensorMaxVal,lineColor);
+
+  uint32_t linePos = getLinePosition(sensorCalVal,lineColor);
 
 
 
-//THe below script is used for testing the line sensor 
-// gain = (sensorVal[3]-sensorVal[5])/30
-//   if gain+pwm >225{
-//    gain = 50; //this if statement prevents me from sending my motors a pwm value of over 225
-//   }
 
-uint32_t linePos = getLinePosition(sensorCalVal,lineColor);
-gain = (linePos-4000)/60;
 
+//THe below script is used for testing the line sensor
+//Serial.println(sensorVal[0]);
+//Serial.println(sensorVal[6]);
+//Serial.println("------------------------------");
+
+ gain =((sensorVal[6]-932)-(sensorVal[0]-1147)*1.11)/26 - 7; //need to map -1300 <-> 1300 onto -50 <-> 50 gain is the same as error
+
+ intergral = intergral + gain;
+ //Serial.println(intergral);
+ //Serial.println(gain);
+
+ input=gain+.1*intergral;
+ if (intergral >50){
+  intergral=50;
+ }
+ if (intergral <-50){
+  intergral = -50;
+ }
+
+delay(1000);
+   if (input+pwm > 225) {
+    input = 225; //this if statement prevents me from sending my motors a pwm value of over 225
+   }
+   if (input-pwm<-255){
+    Serial.println("sanity check");
+    input=-pwm;
+
+   }
+     Serial.println(input+pwm);
+   
+
+//   Serial.println((sensorVal[0]-1147)*1.11); //maps the senso values from 0ish to 1500ish
+//   Serial.println(sensorVal[6]-932); //maps the sensor values from 0ish to 1500ish
+//   Serial.println("-----------------------------------");
+   //delay(1000);
+
+
+//Serial.println(gain+pwm);
  //linefollow left
- strafe(1, 175, gain);
+ strafe(1,pwm, input); //starting at 125 instead of 175, I want to test at slower movements.
+ //Serial.println(gain);
+ 
 
 
  //linefollow right, commented out for now, will test later
   //drive(3, 175, gain); //175 is base pwm signel
+
+  
   
 }
 
 
 
-void strafe(int i,int pwm, gain){ // drive(1) means drive forward
+void strafe(int i,int pwm, int input){
   switch (i){
       
     case 1: // strafe left
@@ -180,39 +237,43 @@ void strafe(int i,int pwm, gain){ // drive(1) means drive forward
       set_direction(3,1);
       set_direction(4,-1);
       
-/*  COMMENTED OUT FOR TESTING, WILL COMMENT BACK IN WHEN WE ARE READY FOR IT TO LINEFOLLOW
-    analogWrite(motor1pwmpin,pwm-gain);
-    analogWrite(motor2pwmpin,pwm-gain);
-    analogWrite(motor3pwmpin,pwm+gain);
-    analogWrite(motor4pwmpin,pwm+gain);
-*/
+  //COMMENTED OUT FOR TESTING, WILL COMMENT BACK IN WHEN WE ARE READY FOR IT TO LINEFOLLOW
+    analogWrite(motor1pwmpin,pwm+input);
+    analogWrite(motor2pwmpin,pwm-input);
+    analogWrite(motor3pwmpin,pwm+input);
+    analogWrite(motor4pwmpin,pwm-input);
+
                                                       //printstatements for testing
-                                                      Serial.println("we are straifing to the left")
-                                                      Serial.println("wheels on the front side PWM input:");
-                                                      Serial.print(pwm-gain);
-                                                      Serial.println("wheels on the back side PWM input");
-                                                      Serial.print(pwm+gain);
+                                                      
+//                                                      Serial.println("we are straifing to the left");
+//                                                      Serial.print("wheels one and 3:");
+//                                                      Serial.println(pwm+gain);
+//                                                      Serial.print("wheels 2 and 4:");
+//                                                      Serial.println(pwm-gain);
+//                                                      delay(1000);
+                                                      
+                                                      
       break;
       
-    case 3: // strafe right
+    case 2: // strafe right
       set_direction(1,-1);
       set_direction(2,1);
       set_direction(3,-1);
       set_direction(4,1);
 
-/* //COMMENTED OUT FOR TESTING
-    analogWrite(motor1pwmpin,pwm-gain);
-    analogWrite(motor2pwmpin,pwm-gain);
-    analogWrite(motor3pwmpin,pwm+gain);
-    analogWrite(motor4pwmpin,pwm+gain);
-    */
+ //COMMENTED OUT FOR TESTING
+    analogWrite(motor1pwmpin,pwm-input);
+    analogWrite(motor2pwmpin,pwm+input);
+    analogWrite(motor3pwmpin,pwm-input);
+    analogWrite(motor4pwmpin,pwm+input);
+    
 
                                                               //printstatements for testing
-                                                      Serial.println("we are straifing to the right")
-                                                      Serial.println("wheels on the front side PWM input:");
-                                                      Serial.print(pwm-gain);
-                                                      Serial.println("wheels on the back side PWM input");
-                                                      Serial.print(pwm+gain);
+//                                                      Serial.println("we are straifing to the right");
+//                                                      Serial.println("wheels on the front side PWM input:");
+//                                                      Serial.print(pwm-gain);
+//                                                      Serial.println("wheels on the back side PWM input");
+//                                                      Serial.print(pwm+gain);
       break;
     
   }  

@@ -117,6 +117,11 @@ void loop()
 
 	uint32_t linePos = getLinePosition(sensorCalVal,lineColor);
 
+//Serial.println(linePos);
+Serial.println(sensorVal[0]);
+Serial.println(sensorVal[6]);
+Serial.println("--------------------");
+delay(500);
 
   /*Uncomment the Serial Print code block below to observe the analog values for each of 
    * the 8 individual embedded IR sensors on the robot. You cann index into the sensor array
@@ -124,16 +129,16 @@ void loop()
    */
   
     
-    //Serial.println(sensorVal[0]); //the left-most sensor if facing same direction as robot
-    //Serial.println(sensorVal[1]);
-   // Serial.println(sensorVal[2]);
-    //Serial.println(sensorVal[3]);
-    //Serial.println(sensorVal[4]); 
-    //Serial.println(sensorVal[5]);
-   // Serial.println(sensorVal[6]);
-   // Serial.println(sensorVal[7]); //the right-most sensor if facing same direction as robot
-    //Serial.println("---------------"); 
-    //delay(1000);
+//    Serial.println(sensorVal[0]); //the left-most sensor if facing same direction as robot
+//    Serial.println(sensorVal[1]);
+//   Serial.println(sensorVal[2]);
+//    Serial.println(sensorVal[3]);
+//    Serial.println(sensorVal[4]); 
+//    Serial.println(sensorVal[5]);
+//    Serial.println(sensorVal[6]);
+//    Serial.println(sensorVal[7]); //the right-most sensor if facing same direction as robot
+//    Serial.println("---------------"); 
+//    delay(1000);
     
     
 
@@ -141,8 +146,7 @@ void loop()
    * Uncomment the Serial line below to read linePos which is an estimate of the lateral position of the black line.
    */
    //LINEPOS should read 500 when the sensor 1 is above the line and read like 6000 or something when the 7th sensor is above the line
-   Serial.println(sensorVal[6]);
-   delay(500);
+   
 
 
   /*
