@@ -63,7 +63,7 @@ int direction, navpwm, t0;
 float kpnav = .08;
 
 const float kpline = .004;
-const float kiline = 0.0005;
+const float kiline = 0.0003;
 
 int cumddistance;
 
@@ -384,56 +384,34 @@ void basket() {
   else{
     isSquare = false;
   }
-
-    if (irLeft == 0) {
-  
-      //motor 1 backward
-      //motor 4 backward
-      //motor 2 forward
-      //motor 3 forward
-      direction = 2;
+  // ir sensors will navigate like so:
+  /*
+   * if the middle see's an ir and the others don't, we are on the right beacon
+   * if the middle sees ir and one of the other sides sees it too, go towards that side
+   * if the middle sees ir and both the others see the ir, assume we are also on the right beacon
+   * 
+   * if middle doesn't see and left and right sees a beacon, stay on the current beacon
+   * if middle doesn't see and left sees, go towards that 
+   * if middle doesn't see and only right sees, go towards right
+   */
+  if (irMiddle == 0){
+    if (irLeft == 0 && irRight == 1){
+      // strafe left
+      
     }
-  
-    if (irRight == 0) {
-  
-      //motor 1 forward
-      //motor 4 forward
-      //motor 2 backward
-      //motor 3 backward
-      direction = 3;
+    else if (irRight == 0 && irLeft == 1){
+      // strafe to the right
     }
-  
-    if (irMiddle == 0) {
-      if (direction == 2) {  //this means the most recent direction that was sensed was left.
-        //motor 1 backward
-        //motor 4 backward
-        //motor 2 forward
-        //motor 3 forward
-        drive(3,strafe_pwm); // strafe right
-      }
-      if (direction == 3) {  //this means the most recent direction sensed was right.
-        //motor 1 forward
-        //motor 4 forward
-        //motor 2 backward
-        //motor 3 backward
-        drive(2,strafe_pwm); // strafe left
-      }
-  
-      readLineSensor(sensorVal);
-  
-      readCalLineSensor(sensorVal,
-                        sensorCalVal,
-                        sensorMinVal,
-                        sensorMaxVal,
-                        lineColor);
+    else{
+      // stay at this beacon
+    }
     
-      if ((sensorVal[0]+sensorVal[1]+sensorVal[2]+sensorVal[5]+sensorVal[6]+sensorVal[7])/6 > 1900) {
-        //if thise condition is satisfied, we are right on top of a cross.
-        Serial.print("shooting...");
-        //state = SHOOT;
-      }
+  }
+
+  else{
+    
+  }
   
-    }  //end of the middle check statement
 
 
 
@@ -457,7 +435,7 @@ void navigate() {
   //drive(1, 0);
   //delay(500);     //delay .5 seconds, this might not be needed
   if (linesHit == 0){
-    drive(1, max_speed_pwm-50);  //go straight, we want to go fast.
+    drive(1, max_speed_pwm);  //go straight, we want to go fast.
   }
   else{
     
@@ -484,14 +462,14 @@ void navigate() {
     distance2_buffer = (distance2_buffer + distance2)/counter;
     */
     int ddistance = duration1-duration2;
-    int threshold = 100;
+    int threshold = 150;
     // duration 2500 min
     cumddistance = cumddistance + ddistance;
     if (cumddistance > 10000000){
       cumddistance = 10000000;
     }
     int pwmfb = abs(ddistance)*kpline + kiline*abs(cumddistance);
-    int pwm = pwmfb + 70;
+    int pwm = pwmfb + 80;
     if (pwm > 255){
       pwm = 255;
     }
