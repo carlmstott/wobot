@@ -24,7 +24,7 @@ const int motor2dir2pin = 14;
 const int motor2pwmpin = 11;
 double gain;       //I will be messing with this outside of the drive function, so I need to decloare it above unlike PWM
 double intergral;  //adding intergral control
-int pwm_strafe = 175;
+int pwm_strafe = 150;
 int input;  //combination of intergral and proportonal gain
 
 
@@ -451,11 +451,41 @@ void loop() {
             //if thise condition is satisfied, we are right on top of a cross.
             direction = 0; //resetting last seen direction when we are lined up on the correct cross
             drive(1, 0);  //we want to stop driving when we change state for visual conformation and to dissepate inertia.
+            
+            digitalWrite(trigPin1, LOW);
+            delayMicroseconds(2);
+            digitalWrite(trigPin1, HIGH);
+            delayMicroseconds(10);
+            digitalWrite(trigPin1, LOW);
+            duration1 = pulseIn(echoPin1, HIGH);
+            distance1 = duration1 * .017;
+          
+            delayMicroseconds(1500); // prevent interference
+          
+            digitalWrite(trigPin2, LOW);  //clear sensor
+            delayMicroseconds(2);
+            digitalWrite(trigPin2, HIGH);
+            delayMicroseconds(10);
+            digitalWrite(trigPin2, LOW);
+            duration2 = pulseIn(echoPin2, HIGH);
+            distance2 = duration2 * .017;
+          
+            //the below back wall squaring control system made by Jack Quao
+            int ddistance = duration1 - duration2;
+            int threshold = 300;  //changed from 150-300-150
+            
+            if (abs(ddistance) > threshold){
+              squareup(ddistance);
+            }
+            
+
             delay(500);   //taking a .5 second pause in order to visually verify we are making it to the next state
             state = 4;
           }
 
         }  //end of the middle IR sensor check statement
+
+
       }
       break;
 
@@ -528,7 +558,7 @@ void strafe(int i, int pwm, int input) {
       analogWrite(motor2pwmpin, pwm - input);
       analogWrite(motor3pwmpin, pwm + input);
       analogWrite(motor4pwmpin, pwm - input);
-      Serial.print("STRAFE_LEFT:"); Serial.println(pwm-input);Serial.println(pwm+input);
+      Serial.print("STRAFE_LEFT:"); Serial.println(pwm - input); Serial.println(pwm + input);
 
 
       break;
@@ -545,7 +575,7 @@ void strafe(int i, int pwm, int input) {
       analogWrite(motor2pwmpin, pwm + input);
       analogWrite(motor3pwmpin, pwm - input);
       analogWrite(motor4pwmpin, pwm + input);
-      Serial.print("STRAFE_RIGHT:"); Serial.println(pwm-input);Serial.println(pwm+input);
+      Serial.print("STRAFE_RIGHT:"); Serial.println(pwm - input); Serial.println(pwm + input);
 
 
       break;
@@ -671,4 +701,21 @@ void load() {
 
   delay(1000);
   Serial.println("LOOOOAAADDDDDD");
+}
+
+void squareup(int ddistance, int threshold) {
+  float kp = 0.08;
+  
+  int pwm = 80+kp*abs(ddistance);
+
+  if (ddistance > threshold) {
+    drive(5,pwm);
+  } else if (ddistance < -threshold) {
+    drive(6,pwm);
+  } else {
+    drive(1,0);
+  }
+
+}
+
 }
