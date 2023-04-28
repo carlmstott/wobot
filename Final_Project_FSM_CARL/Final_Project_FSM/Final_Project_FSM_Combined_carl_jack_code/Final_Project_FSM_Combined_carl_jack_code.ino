@@ -95,7 +95,7 @@ void setup() {
 
   setupRSLK();
   /* Left button on Launchpad */
-  setupWaitBtn(LP_LEFT_BTN);
+  setupWaitBtn(LP_RIGHT_BTN);
   /* Red led in rgb led */
   setupLed(RED_LED);
   clearMinMax(sensorMinVal,sensorMaxVal);
@@ -137,7 +137,7 @@ void floorCalibration() {
   String btnMsg = "Push left button on Launchpad to begin calibration.\n";
   btnMsg += "Make sure the robot is on the floor away from the line.\n";
   /* Wait until button is pressed to start robot */
-  waitBtnPressed(LP_LEFT_BTN,btnMsg,RED_LED);
+  waitBtnPressed(LP_RIGHT_BTN,btnMsg,RED_LED);
 
   delay(1000);
 
@@ -148,7 +148,7 @@ void floorCalibration() {
   btnMsg = "Push left button on Launchpad to begin line following.\n";
   btnMsg += "Make sure the robot is on the line.\n";
   /* Wait until button is pressed to start robot */
-  waitBtnPressed(LP_LEFT_BTN,btnMsg,RED_LED);
+  waitBtnPressed(LP_RIGHT_BTN,btnMsg,RED_LED);
   delay(1000);
 
   //enableMotor(BOTH_MOTORS); leftover from RSLK code, dont think it has a use.
@@ -224,13 +224,26 @@ case 1: { //state 1, 1the robot has been placed down and has not squared itself 
                                                           
       
       deltaDistance = duration1 - duration2; //using durations to calulate deltaDistance instead of distance values becasue duration has a higher resolution.
+
+//jack's P control for squaring against the wall BEING TESTED
+  if (distance1 < 40 || distance2< 40){
+    
+    navpwm = 65 + kpnav*abs(deltaDistance);
+    
+
+drive(5,navpwm);
+  
+  }
+  //ABOVE BEING TESTED
+  
+      
       if (abs(deltaDistance) <= 200 && distance2 <50 && distance1 <50) {
         squareCounter=squareCounter+1; //the ideas with squarecounter is that the robot wont think its square if a rouge values happens, it will only think its square
                                         //if the ondition for being square is hit 3 times
         if (squareCounter > 3){
           Serial.println("made it to state 2");
           drive(1,0);
-          delay(500);
+          delay(50000);
          //delay .5 seconds, this helps with visual conformation that we have made it to the next state.
         state = 2;
        
@@ -391,7 +404,6 @@ if (input+pwm > 225) {
     input = 225; //this if statement prevents me from sending my motors a pwm value of over 225
 }
 if (input-pwm<-255){
-    Serial.println("sanity check");
     input=-pwm;
 
 }
@@ -402,13 +414,13 @@ if (input-pwm<-255){
 
 if (isLeft=0){
   //NOTE that these conditions are met when they read a signel of zero becasue we use a pullup resistor circuit for the IR sensors.
-  strafe(1, 175, gain);
+  strafe(1, pwm, input);
  
   direction=1;
 }
 
  if (isRight=0){
-  strafe(2, 175, gain);
+  strafe(2, pwm, input);
 
   direction=2;
 
@@ -417,20 +429,17 @@ if (isLeft=0){
 if (isMiddle=0){ //meaning the IR sensor in the middle is seeing a beacon, meaning we are VERY CLOSE to a cross
 if (direction==1){ //this means the most recent direction that was sensed was left. 
   //want to drive, NOT STRAIF, to the left. we dont want our control system to freak out when linePos shoots up to 7000
-  drive(2,200);
+ strafe(1, pwm, input);
   
 }
-
-   
-
 if (direction==2){ //this means the most recent direction sensed was right.
   //want to drive, NOT STRAIF, to the right. we dont want our control system to freak out when  linePos shoots up to 7000
-  drive(3,200);
+  strafe(2, pwm, input);
  
 }
 
 
- if (sensorVal[0]>2000 && sensorVal[1]>2000 && sensorVal[2]>2000 && sensorVal[3]>2000 && sensorVal[4]>2000 && sensorVal[5]>2000 && sensorVal[6]>2000 && sensorVal[7] >2000){
+ if (sensorVal[0]>1500 && sensorVal[1]>1500 && sensorVal[2]>1500 && sensorVal[3]>1500 && sensorVal[4]>1500 && sensorVal[5]>1500 && sensorVal[6]>1500 && sensorVal[7] >1500){
  //if thise condition is satisfied, we are right on top of a cross.
 
 drive(1,0); //we want to stop driving when we change state for visual conformation and to dissepate inertia.
