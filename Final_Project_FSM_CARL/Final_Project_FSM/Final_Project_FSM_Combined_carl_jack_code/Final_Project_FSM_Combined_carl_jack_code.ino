@@ -413,7 +413,7 @@ int isRight = digitalRead(IRbeaconRight);
  //Serial.println(gain);
 
 
- input=gain+.1*intergral;
+ input=gain+.01*intergral;
  
   if (intergral >50){
     intergral=50;
@@ -674,39 +674,29 @@ void set_direction(int i,int k){
 
     
   }
-
-
-  
 }
+
 
 void shoot(){
   Serial.println("SHOOOOOOT");
   
   digitalWrite(shootPin, HIGH);
-    delay(20);
+    delay(100);
     digitalWrite(shootPin, LOW);
+    
 }
 
-void load(){
+void load() {
      
-       for (int angle = 140; angle >= 0; angle -= 140) {
-    myServo.write(angle);  // Set servo angle
- Serial.println(angle);
+    myServo.write(0);  // Set servo angle
+ Serial.println(0);
  
-  }
-    for (int angle = 0; angle <= 45; angle += 45) {
-    myServo1.write(angle);  // Set servo angle
+    myServo1.write(50);  // Set servo angle
 
-  }
-  delay(650);
+  
+  delay(700);
+  myServo.write(140);
+  myServo1.write(0);
 
-    for (int angle = 0; angle <= 140; angle += 140) {
-    myServo.write(angle);  // Set servo angle
-Serial.println("small servo is being sent a signel");
+   delay(1000);
   }
-    for (int angle = 45; angle >= 0; angle -= 45) {
-    myServo1.write(angle);  // Set servo angle
-
-  }
-   delay(2000);
-}

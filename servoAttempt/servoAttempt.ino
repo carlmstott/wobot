@@ -2,44 +2,52 @@
 
 Servo myServo;// Create a servo object
 Servo myServo1;
-int go;
+
+int shootPin = 30;
 
 
 void setup() {
   Serial.begin(115200);
-  myServo.attach(3);  // Attach the servo to pin 9
+  myServo.attach(3);
   myServo1.attach(4);
-  int go = 0;
+  pinMode(3,OUTPUT);
+  pinMode(4,OUTPUT);
+  pinMode(shootPin, OUTPUT);
+  digitalWrite(shootPin,LOW);
 }
 
 void loop() {
+
+  shoot();
+  //delay(500);
   load();
-  delay(4000);
+  //delay(500);
+
 }
 
 
 
 void load() {
      
-       for (int angle = 140; angle >= 0; angle -= 140) {
-    myServo.write(angle);  // Set servo angle
- Serial.println(angle);
+    myServo.write(0);  // Set servo angle
+ Serial.println(0);
  
-  }
-    for (int angle = 0; angle <= 45; angle += 45) {
-    myServo1.write(angle);  // Set servo angle
+    myServo1.write(50);  // Set servo angle
 
-  }
-  delay(650);
+  
+  delay(700);
+  myServo.write(140);
+  myServo1.write(0);
 
-    for (int angle = 0; angle <= 140; angle += 140) {
-    myServo.write(angle);  // Set servo angle
-Serial.println("small servo is being sent a signel");
+   delay(1000);
   }
-    for (int angle = 45; angle >= 0; angle -= 45) {
-    myServo1.write(angle);  // Set servo angle
 
-  }
-   delay(2000);
-  }
+void shoot(){
+  Serial.println("SHOOOOOOT");
+  
+  digitalWrite(shootPin, HIGH);
+    delay(100);
+    digitalWrite(shootPin, LOW);
+    
+}
  
