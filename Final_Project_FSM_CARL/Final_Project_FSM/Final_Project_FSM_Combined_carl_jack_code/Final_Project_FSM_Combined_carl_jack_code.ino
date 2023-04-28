@@ -475,7 +475,7 @@ void loop() {
             int threshold = 300;  //changed from 150-300-150
             
             if (abs(ddistance) > threshold){
-              squareup(ddistance);
+              squareup(ddistance, threshold);
             }
             
 
@@ -699,7 +699,7 @@ void load() {
   myServo.write(140);
   myServo1.write(0);
 
-  delay(1000);
+  delay(2000);
   Serial.println("LOOOOAAADDDDDD");
 }
 
@@ -715,7 +715,5 @@ void squareup(int ddistance, int threshold) {
   } else {
     drive(1,0);
   }
-
-}
 
 }

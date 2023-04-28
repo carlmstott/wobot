@@ -32,14 +32,14 @@ void load() {
     myServo.write(0);  // Set servo angle
  Serial.println(0);
  
-    myServo1.write(50);  // Set servo angle
+    myServo1.write(45);  // Set servo angle
 
   
   delay(700);
   myServo.write(140);
   myServo1.write(0);
 
-   delay(1000);
+   delay(3000);
   }
 
 void shoot(){
